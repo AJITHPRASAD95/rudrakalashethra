@@ -1,0 +1,12 @@
+const router = require('express').Router();
+const c = require('./attendance.controller');
+const { protect } = require('../../middleware/auth');
+const { permit } = require('../../middleware/rbac');
+router.use(protect);
+router.get('/',                           c.getAttendance);
+router.get('/report',                     permit('branch_manager','super_admin'), c.attendanceReport);
+router.get('/student/:studentId/summary', c.studentSummary);
+router.get('/class/:classId/roster',      c.getClassRoster);
+router.post('/',                          permit('teacher','branch_manager','super_admin'), c.markAttendance);
+router.post('/bulk',                      permit('teacher','branch_manager','super_admin'), c.bulkMark);
+module.exports = router;

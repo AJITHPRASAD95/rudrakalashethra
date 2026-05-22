@@ -1,0 +1,13 @@
+const router = require('express').Router();
+const c = require('./payment.controller');
+const { protect } = require('../../middleware/auth');
+const { permit } = require('../../middleware/rbac');
+router.use(protect);
+router.get('/', c.getPayments);
+router.get('/dues', permit('branch_manager','super_admin'), c.getDues);
+router.post('/create-order', c.createOrder);
+router.post('/verify', c.verifyPayment);
+router.post('/manual', permit('branch_manager','super_admin'), c.manualPayment);
+router.put('/:id/mark-paid', permit('branch_manager','super_admin'), c.markPaid);
+router.get('/:id', c.getPayment);
+module.exports = router;

@@ -1,0 +1,13 @@
+const router = require('express').Router();
+const c = require('./class.controller');
+const { protect } = require('../../middleware/auth');
+const { permit } = require('../../middleware/rbac');
+router.use(protect);
+router.get('/', c.getClasses);
+router.post('/', permit('super_admin','branch_manager','teacher'), c.createClass);
+router.get('/:id', c.getClass);
+router.put('/:id', permit('super_admin','branch_manager','teacher'), c.updateClass);
+router.delete('/:id', permit('super_admin','branch_manager'), c.deleteClass);
+router.get('/:id/join', c.joinClass);
+router.put('/:id/status', permit('super_admin','branch_manager','teacher'), c.updateStatus);
+module.exports = router;

@@ -1,0 +1,11 @@
+const router = require('express').Router();
+const c = require('./submission.controller');
+const { protect } = require('../../middleware/auth');
+const { permit } = require('../../middleware/rbac');
+const upload = require('../../config/storage');
+router.use(protect);
+router.get('/', c.getSubmissions);
+router.post('/', upload.single('video'), c.createSubmission);
+router.get('/:id', c.getSubmission);
+router.post('/:id/feedback', permit('teacher','branch_manager','super_admin'), c.addFeedback);
+module.exports = router;

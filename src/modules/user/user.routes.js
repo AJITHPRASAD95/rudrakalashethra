@@ -1,0 +1,16 @@
+const router = require('express').Router();
+const c = require('./user.controller');
+const { protect } = require('../../middleware/auth');
+const { permit } = require('../../middleware/rbac');
+const upload = require('../../config/storage');
+router.use(protect);
+router.get('/', permit('super_admin','branch_manager'), c.getUsers);
+router.post('/', permit('super_admin','branch_manager'), c.createUser);
+router.get('/:id/student-profile', permit('super_admin','branch_manager'), c.getStudentProfile);
+router.get('/:id', c.getUser);
+router.put('/:id', c.updateUser);
+router.delete('/:id', permit('super_admin','branch_manager'), c.deleteUser);
+router.post('/:id/link-parent', permit('super_admin','branch_manager'), c.linkParent);
+router.put('/:id/fcm-token', c.updateFcmToken);
+router.post('/:id/avatar', upload.single('avatar'), c.updateAvatar);
+module.exports = router;

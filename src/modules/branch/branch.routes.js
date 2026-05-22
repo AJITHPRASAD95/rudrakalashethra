@@ -1,0 +1,11 @@
+const router = require('express').Router();
+const c = require('./branch.controller');
+const { protect } = require('../../middleware/auth');
+const { permit } = require('../../middleware/rbac');
+router.use(protect);
+router.get('/', c.getBranches);
+router.post('/', permit('super_admin'), c.createBranch);
+router.get('/:id', c.getBranch);
+router.put('/:id', permit('super_admin'), c.updateBranch);
+router.delete('/:id', permit('super_admin'), c.deleteBranch);
+module.exports = router;
