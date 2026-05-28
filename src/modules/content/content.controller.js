@@ -17,6 +17,15 @@ function parseEmbed(url) {
   return null;
 }
 
+function isHttpUrl(url) {
+  try {
+    const u = new URL(url);
+    return ['http:', 'https:'].includes(u.protocol);
+  } catch (_) {
+    return false;
+  }
+}
+
 const getCategories = asyncHandler(async (req, res) => {
   const filter = { schoolId: req.user.schoolId };
   if (req.user.role === 'student') filter.isPublished = true;
@@ -60,21 +69,27 @@ const createContent = asyncHandler(async (req, res) => {
   if (!category || !title || !type) throw new ApiError(400, 'category, title, type required');
 
   let url, thumbnail, size, source = 'upload', embedId;
+  const mainFile  = req.files && req.files['file'] && req.files['file'][0];
+  const thumbFile = req.files && req.files['thumbnail'] && req.files['thumbnail'][0];
+  if (thumbFile) thumbnail = thumbFile.location || '/uploads/' + thumbFile.filename;
 
   // Embed (YouTube / Vimeo) — when admin pastes a link instead of uploading
   if (embedUrl && embedUrl.trim()) {
-    const parsed = parseEmbed(embedUrl.trim());
-    if (!parsed) throw new ApiError(400, 'Could not detect a YouTube or Vimeo URL');
-    url        = embedUrl.trim();
-    source     = parsed.source;
-    embedId    = parsed.embedId;
-    thumbnail  = parsed.thumbnail;
+    const externalUrl = embedUrl.trim();
+    if (!isHttpUrl(externalUrl)) throw new ApiError(400, 'A valid http/https URL is required');
+    const parsed = parseEmbed(externalUrl);
+    url = externalUrl;
+    if (parsed) {
+      source = parsed.source;
+      embedId = parsed.embedId;
+      thumbnail = thumbnail || parsed.thumbnail;
+    } else {
+      if (!['video','pdf','audio'].includes(type)) throw new ApiError(400, 'External URL is supported for video, PDF and audio. Upload image files directly.');
+      source = 'external';
+    }
   } else {
-    const mainFile  = req.files && req.files['file'] && req.files['file'][0];
-    const thumbFile = req.files && req.files['thumbnail'] && req.files['thumbnail'][0];
-    if (!mainFile) throw new ApiError(400, 'File or embed URL is required');
+    if (!mainFile) throw new ApiError(400, 'File or URL is required');
     url       = mainFile.location  || '/uploads/' + mainFile.filename;
-    thumbnail = thumbFile ? (thumbFile.location || '/uploads/' + thumbFile.filename) : undefined;
     size      = mainFile.size;
   }
 

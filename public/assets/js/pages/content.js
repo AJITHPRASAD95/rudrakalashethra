@@ -139,7 +139,10 @@ router.register('content', async function(el) {
         '<textarea class="form-control" id="f-desc" rows="2" placeholder="Brief description…"></textarea></div>' +
       '<div class="form-group"><label class="form-label">File</label>' +
         '<input class="form-control" id="f-file" type="file" accept="video/*,image/*,.pdf,audio/*"/>' +
-        '<div class="form-hint">Video, image, PDF or audio. Max 500MB.</div></div>' +
+        '<div class="form-hint">Upload images/photos here. Video, PDF and audio can be uploaded or linked.</div></div>' +
+      '<div class="form-group"><label class="form-label">URL instead of file</label>' +
+        '<input class="form-control" id="f-url" type="url" placeholder="YouTube video, PDF link, audio link, or direct video URL"/>' +
+        '<div class="form-hint">Use this for YouTube unlisted videos, PDF links, audio links, or externally hosted files.</div></div>' +
       '<div class="form-group"><label class="form-label">Thumbnail (optional, for videos)</label>' +
         '<input class="form-control" id="f-thumb" type="file" accept="image/*"/></div>' +
       '<div class="form-group"><label class="form-label">Tags (comma-separated)</label>' +
@@ -156,7 +159,10 @@ router.register('content', async function(el) {
       const title    = ov.querySelector('#f-title').value.trim();
       const type     = ov.querySelector('#f-type').value;
       const fileEl   = ov.querySelector('#f-file');
-      if (!category||!title||!fileEl.files[0]) { toast.error('Category, title and file are required'); return; }
+      const urlVal   = ov.querySelector('#f-url').value.trim();
+      if (!category||!title) { toast.error('Category and title are required'); return; }
+      if (!fileEl.files[0] && !urlVal) { toast.error('Upload a file or paste a URL'); return; }
+      if (type === 'image' && urlVal && !fileEl.files[0]) { toast.error('Please upload image files directly'); return; }
 
       const btn = ov.querySelector('#save-content');
       btn.textContent = 'Uploading…'; btn.disabled = true;
@@ -168,7 +174,8 @@ router.register('content', async function(el) {
         fd.append('type',        type);
         fd.append('description', ov.querySelector('#f-desc').value.trim());
         fd.append('tags',        ov.querySelector('#f-tags').value.trim());
-        fd.append('file',        fileEl.files[0]);
+        if (urlVal) fd.append('embedUrl', urlVal);
+        if (fileEl.files[0]) fd.append('file', fileEl.files[0]);
         const thumbEl = ov.querySelector('#f-thumb');
         if (thumbEl.files[0]) fd.append('thumbnail', thumbEl.files[0]);
 
