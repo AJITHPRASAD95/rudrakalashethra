@@ -9,7 +9,7 @@ const DEFAULT_CATEGORIES = ['Mudras','Adavus','Theory','Abhinaya','Footwork','Ha
 function parseEmbed(url) {
   if (!url) return null;
   // YouTube — youtu.be/<id>, youtube.com/watch?v=<id>, youtube.com/embed/<id>, youtube.com/shorts/<id>
-  let m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+  let m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|m\.youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
   if (m) return { source: 'youtube', embedId: m[1], thumbnail: `https://img.youtube.com/vi/${m[1]}/hqdefault.jpg` };
   // Vimeo — vimeo.com/<id>
   m = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);

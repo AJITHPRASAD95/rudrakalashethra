@@ -2,15 +2,32 @@
 router.register('learn-videos', async function(el) {
   let activeCategory = 'all', search = '', page = 1;
   const escapeHtml = (s='') => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const escapeAttr = escapeHtml;
+
+  function parseEmbed(url) {
+    if (!url) return null;
+    let m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|m\.youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+    if (m) return { source:'youtube', embedId:m[1] };
+    m = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+    if (m) return { source:'vimeo', embedId:m[1] };
+    return null;
+  }
 
   function embedHtml(item) {
-    if (item.source === 'youtube' && item.embedId) {
-      return '<iframe style="width:100%;aspect-ratio:16/9;border:0;border-radius:8px" src="https://www.youtube.com/embed/'+item.embedId+'" allowfullscreen></iframe>';
+    const parsed = item.embedId ? { source:item.source, embedId:item.embedId } : parseEmbed(item.url);
+    if (parsed && parsed.source === 'youtube' && parsed.embedId) {
+      const origin = encodeURIComponent(window.location.origin);
+      const src = 'https://www.youtube.com/embed/'+encodeURIComponent(parsed.embedId)+'?rel=0&modestbranding=1&playsinline=1&enablejsapi=1&origin='+origin;
+      return '<div class="video-frame-wrap" id="video-frame-wrap" style="width:100%;aspect-ratio:16/9;background:#000;border-radius:8px;overflow:hidden">'+
+        '<iframe title="'+escapeAttr(item.title || 'YouTube video')+'" style="width:100%;height:100%;border:0" src="'+src+'" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen webkitallowfullscreen mozallowfullscreen></iframe>'+
+      '</div>';
     }
-    if (item.source === 'vimeo' && item.embedId) {
-      return '<iframe style="width:100%;aspect-ratio:16/9;border:0;border-radius:8px" src="https://player.vimeo.com/video/'+item.embedId+'" allowfullscreen></iframe>';
+    if (parsed && parsed.source === 'vimeo' && parsed.embedId) {
+      return '<div class="video-frame-wrap" id="video-frame-wrap" style="width:100%;aspect-ratio:16/9;background:#000;border-radius:8px;overflow:hidden">'+
+        '<iframe title="'+escapeAttr(item.title || 'Vimeo video')+'" style="width:100%;height:100%;border:0" src="https://player.vimeo.com/video/'+encodeURIComponent(parsed.embedId)+'" allow="autoplay; fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen webkitallowfullscreen mozallowfullscreen></iframe>'+
+      '</div>';
     }
-    return '<video controls style="width:100%;border-radius:8px;background:#000" src="'+item.url+'"></video>';
+    return '<video controls playsinline style="width:100%;border-radius:8px;background:#000" src="'+escapeAttr(item.url)+'"></video>';
   }
 
   async function render() {
@@ -91,9 +108,22 @@ router.register('learn-videos', async function(el) {
       embedHtml(v) +
       (v.description ? '<p style="margin-top:14px;line-height:1.6">'+escapeHtml(v.description)+'</p>' : ''),
       '<button class="btn btn-secondary modal-cancel">Close</button>'+
+      '<button class="btn btn-secondary" id="fullscreen-video">Fullscreen</button>'+
       '<button class="btn btn-primary" id="done">✓ Mark as watched</button>'
     );
     ov.querySelector('.modal-cancel').onclick = () => ov.remove();
+    ov.querySelector('#fullscreen-video').onclick = async () => {
+      const target = ov.querySelector('#video-frame-wrap') || ov.querySelector('video') || ov.querySelector('iframe');
+      if (!target) return;
+      try {
+        if (target.requestFullscreen) await target.requestFullscreen();
+        else if (target.webkitRequestFullscreen) target.webkitRequestFullscreen();
+        else if (target.mozRequestFullScreen) target.mozRequestFullScreen();
+        else toast.info('Fullscreen is not available in this browser');
+      } catch (_) {
+        toast.info('Use the fullscreen button inside the video player');
+      }
+    };
     ov.querySelector('#done').onclick = async () => {
       await api.post('/learn/track', { itemType:'video', itemId: v._id, status: 'completed' });
       toast.success('Marked as watched'); ov.remove(); render();

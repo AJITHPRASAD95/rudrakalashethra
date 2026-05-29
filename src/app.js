@@ -8,7 +8,10 @@ const path    = require('path');
 const app = express();
 
 app.set('trust proxy', 1);
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(helmet({
+  contentSecurityPolicy: false,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+}));
 app.use(cors({
   origin: (process.env.ALLOWED_ORIGINS || '*').split(','),
   credentials: true,
